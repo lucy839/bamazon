@@ -32,12 +32,13 @@ var customer = {
         var space = " ";
         var spaceTwo = " ";
         for (var i in list) {
-            for (var j = 5; j >= parseInt(parseInt(list[i].item_id) / 10); j--) {
+            for (var j = 5; j >= list[i].item_id.toString().length; j--) {
                 space += " ";
             }
             for (var k = 20; k >= list[i].product_name.length; k--) {
                 spaceTwo += " ";
             }
+            console.log("Welcome to Bamazon!!!");
             console.log("ITEM ID : " + list[i].item_id + space + " PRODUCT NAME : " + list[i].product_name +
                 spaceTwo + " PRICE : $" + list[i].price);
             var space = " ";
