@@ -39,7 +39,7 @@ var manager = {
                             manager.view(list);
                             break;
                         case ("View Low Inventory"):
-                            manager.lowInventory();
+                            manager.lowInventory(list);
 
                             break;
                         case ("Add to Inventory"):
@@ -74,32 +74,20 @@ var manager = {
             }
             manager.promptContinue();
     },
-    lowInventory: function () {
+
+    lowInventory: function (list) {
         console.log("These are low in stock!")
-        var query = "SELECT * FROM products"
-        connection.query(query, function (err, list) {
-            if (err) throw err;
             for (var i in list) {
                 if (list[i].stock_quantity < 5) {
-                    var space = " ";
-                    var spaceTwo = " ";
-                    for (var j = 5; j >= list[i].item_id.toString().length; j--) {
-                        space += " ";
-                    }
-                    for (var k = 20; k >= list[i].product_name.length; k--) {
-                        spaceTwo += " ";
-                    }
-                    console.log("ITEM ID : " + list[i].item_id + space + " PRODUCT NAME : " + list[i].product_name +
-                        spaceTwo + " QUANTITIES : " + list[i].stock_quantity);
-                    space = " ";
-                    spaceTwo = " ";
+                    console.log("ITEM ID : " + list[i].item_id + 
+                    manager.getSpace(list[i].item_id.toString().length) + " PRODUCT NAME : " + 
+                    list[i].product_name + manager.getSpace(list[i].product_name.length)+ 
+                    " QUANTITIES : " + list[i].stock_quantity);
                 }
             }
             manager.promptContinue();
-
-        });
-
     },
+    
     addProduct: function () {
         inquirer
             .prompt([
