@@ -159,7 +159,7 @@ var customer = {
         });
     },
 
-    // function that let user know to decide whether to make another transaction or finish the app
+    // function that let user to decide whether to make another transaction or finish the app
     promptContinue: function () {
         inquirer
             .prompt({

@@ -1,9 +1,13 @@
+// packages required
 require("dotenv").config();
 var mysql = require("mysql");
 var keys = require("./keys.js");
 var inquirer = require("inquirer");
 
+// for keeping password private
 var myPassword = keys.keys.password;
+
+// mysql connection 
 var connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
@@ -12,12 +16,15 @@ var connection = mysql.createConnection({
     database: "bamazonDB"
 });
 
+// check the connection
 connection.connect(function (err) {
     if (err) throw err;
+    // If no problem, start the app by prompting manager
     manager.promptManager();
 });
 
 var manager = {
+    // function that prompt manager to choose from the options and call function accordingly
     promptManager: function () {
         inquirer
             .prompt([
@@ -48,13 +55,13 @@ var manager = {
                             break;
                         case ("Add New Product"):
 
-                            manager.newProduct();
+                            manager.newProduct(list);
                             break;
                     }
                 });
             });
-
     },
+
     // function that gets space and return it, so that all rows and columns are lined up
     getSpace: function (length) {
         var space = " ";
@@ -63,31 +70,36 @@ var manager = {
         }
         return space;
     },
-    view: function (list) {
-            for (var i in list) {
-                console.log("ITEM ID : " + list[i].item_id + 
-                    manager.getSpace(list[i].item_id.toString().length) + " PRODUCT NAME : " + 
-                    list[i].product_name + manager.getSpace(list[i].product_name.length) + " PRICE : $" + 
-                    list[i].price + manager.getSpace(list[i].price.toString().length) + 
-                    " QUANTITIES : " + list[i].stock_quantity);
 
-            }
-            manager.promptContinue();
+    // function that gives the list of items in stock 
+    view: function (list) {
+        for (var i in list) {
+            console.log("ITEM ID : " + list[i].item_id +
+                manager.getSpace(list[i].item_id.toString().length) + " PRODUCT NAME : " +
+                list[i].product_name + manager.getSpace(list[i].product_name.length) + " PRICE : $" +
+                list[i].price + manager.getSpace(list[i].price.toString().length) +
+                " QUANTITIES : " + list[i].stock_quantity);
+        }
+        // call promptContinue function to ask if manager wants to do another job
+        manager.promptContinue();
     },
 
+    // function that sorts any items less than 5 in stock and give that list to manager
     lowInventory: function (list) {
         console.log("These are low in stock!")
-            for (var i in list) {
-                if (list[i].stock_quantity < 5) {
-                    console.log("ITEM ID : " + list[i].item_id + 
-                    manager.getSpace(list[i].item_id.toString().length) + " PRODUCT NAME : " + 
-                    list[i].product_name + manager.getSpace(list[i].product_name.length)+ 
+        for (var i in list) {
+            if (list[i].stock_quantity < 5) {
+                console.log("ITEM ID : " + list[i].item_id +
+                    manager.getSpace(list[i].item_id.toString().length) + " PRODUCT NAME : " +
+                    list[i].product_name + manager.getSpace(list[i].product_name.length) +
                     " QUANTITIES : " + list[i].stock_quantity);
-                }
             }
-            manager.promptContinue();
+        }
+        // call promptContinue function to ask if manager wants to do another job
+        manager.promptContinue();
     },
 
+    // function that adds product to existing inventory
     addProduct: function (list) {
         inquirer
             .prompt([
@@ -111,39 +123,49 @@ var manager = {
                 }
             ])
             .then(function (response) {
-                    var itemNum = response.item;
-                    if (itemNum > list.length) {
-                        console.log("Item number not exisitng. Please enter existing product.");
-                        manager.addProduct();
-                    } else {
-                        var itemQuantity = response.quantity;
-                        var currentStock = list[itemNum - 1].stock_quantity;
-                        var updateStock = currentStock + parseInt(itemQuantity);
-                        var query = connection.query(
-                            "UPDATE products SET ? WHERE ?",
-                            [
-                                {
-                                    stock_quantity: updateStock
-                                },
-                                {
-                                    item_id: itemNum
-                                }
-                            ],
-                            function (err, res) {
-                                if (err) throw err;
-                                console.log("Here is an updated product!");
-                                console.log("ITEM ID : " + itemNum + 
-                                    manager.getSpace(list[itemNum - 1].item_id.toString().length) + 
-                                    " PRODUCT NAME : " + list[itemNum - 1].product_name +
-                                    manager.getSpace(list[itemNum - 1].product_name.length) + 
-                                    " QUANTITIES : " + updateStock);
-                                manager.promptContinue();
+                // check if item number is existing
+                if (response.item > list.length) {
+                    console.log("Item number not exisitng. Please enter existing product.");
+                    manager.addProduct();
+                } else {
+                    // update inventory
+                    var updateStock = list[response.item - 1].stock_quantity + parseInt(response.quantity);
+                    var query = connection.query(
+                        "UPDATE products SET ? WHERE ?",
+                        [
+                            {
+                                stock_quantity: updateStock
+                            },
+                            {
+                                item_id: response.item
                             }
-                        );
-                    }
-                });
+                        ],
+                        function (err, res) {
+                            if (err) throw err;
+                            // let user know of updated product
+                            console.log("Here is an updated product!");
+                            console.log("ITEM ID : " + response.item +
+                                manager.getSpace(list[response.item - 1].item_id.toString().length) +
+                                " PRODUCT NAME : " + list[response.item - 1].product_name +
+                                manager.getSpace(list[response.item - 1].product_name.length) +
+                                " QUANTITIES : " + updateStock);
+                            // call promptContinue function to ask if manager wants to do another job
+                            manager.promptContinue();
+                        }
+                    );
+                }
+            });
     },
-    newProduct: function () {
+
+    // function to add brand new product
+    newProduct: function (list) {
+        // make list of department names without redundancy
+        var choices = [];
+        for (var i in list) {
+            if (choices.indexOf(list[i].department_name) == -1){
+                choices.push(list[i].department_name);
+            }
+        }
         inquirer
             .prompt([
                 {
@@ -153,8 +175,9 @@ var manager = {
                 },
                 {
                     name: "department",
-                    type: "input",
+                    type: "list",
                     message: "Which department are you adding to? ",
+                    choices: choices
                 },
                 {
                     name: "price",
@@ -176,17 +199,20 @@ var manager = {
                 }
             ])
             .then(function (response) {
-                // if it is already on the list, let user know to use other option.
-                var query = "SELECT * FROM products"
-                connection.query(query, function (err, list) {
-                    for (var i in list) {
-                        if (response.name == list[i].product_name) {
-                            console.log("Item is already in stock. Please use Add to Inventory option to add");
-                            manager.promptContinue();
-                        } else {
+                // make sure the item is not already in stock
+                var inStock = false;
+                for (var i in list) {
+                    if (response.name.toLowerCase() == list[i].product_name.toLowerCase()) {
+                        inStock = true;
+                    }
+                }
+                if (inStock) {
+                    console.log("Item is already in stock. Please use Add to Inventory option to add");
+                    manager.promptContinue();
 
-                        }
-                    } var query = connection.query(
+                } else {
+                    // update inventory
+                    var query = connection.query(
                         "INSERT INTO products SET ?",
                         {
                             product_name: response.name,
@@ -196,18 +222,16 @@ var manager = {
                         },
                         function (err, res) {
                             console.log("Product Registered");
-                            // Call updateProduct AFTER the INSERT completes
-                            manager.view();
+                            // call promptContinue function to ask if manager wants to do another job
+                            manager.promptContinue();
                         }
                     );
-
-
-                    // ele update the mysql
-                    // call view();
-                });
+                }
             });
+
     },
 
+    // function that let manager to decide whether to do another job or finish the app
     promptContinue: function () {
         inquirer
             .prompt({
