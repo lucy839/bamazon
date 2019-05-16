@@ -23,7 +23,7 @@ connection.connect(function (err) {
 });
 
 // rowCount for view 
-const rowCount = 0; 
+var rowCount = 0; 
 
 var supervisor = {
     // function that prompt supervisor to choose from the options and call function accordingly
@@ -111,6 +111,7 @@ var supervisor = {
                 // if supervisor wants to do another job
                 if (rowCount == listLength){
                     supervisor.promptContinue();
+                    rowCount = 0;
                 }
             });
     },
@@ -162,7 +163,7 @@ var supervisor = {
             });
     },
 
-     // function that let supervisor to decide whether to do another job or finish the app
+    // function that let supervisor to decide whether to do another job or finish the app
     promptContinue: function () {
         inquirer
             .prompt({
