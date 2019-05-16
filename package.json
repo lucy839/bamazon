@@ -1,0 +1,26 @@
+{
+  "name": "bamazon",
+  "version": "1.0.0",
+  "description": "## Descripion",
+  "main": "bamazonCustomer.js",
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "inquirer": "^6.3.1",
+    "mysql": "^2.17.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucy839/bamazon.git"
+  },
+  "keywords": [],
+  "author": "Lucy Lee",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lucy839/bamazon/issues"
+  },
+  "homepage": "https://github.com/lucy839/bamazon#readme"
+}
