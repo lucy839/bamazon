@@ -43,7 +43,7 @@ var manager = {
 
                             break;
                         case ("Add to Inventory"):
-                            manager.addProduct();
+                            manager.addProduct(list);
 
                             break;
                         case ("Add New Product"):
@@ -87,8 +87,8 @@ var manager = {
             }
             manager.promptContinue();
     },
-    
-    addProduct: function () {
+
+    addProduct: function (list) {
         inquirer
             .prompt([
                 {
@@ -111,8 +111,6 @@ var manager = {
                 }
             ])
             .then(function (response) {
-                var query = "SELECT * FROM products"
-                connection.query(query, function (err, list) {
                     var itemNum = response.item;
                     if (itemNum > list.length) {
                         console.log("Item number not exisitng. Please enter existing product.");
@@ -132,23 +130,18 @@ var manager = {
                                 }
                             ],
                             function (err, res) {
+                                if (err) throw err;
                                 console.log("Here is an updated product!");
-                                var space = " ";
-                                var spaceTwo = " ";
-                                for (var j = 5; j >= list[itemNum - 1].item_id.toString().length; j--) {
-                                    space += " ";
-                                }
-                                for (var k = 20; k >= list[itemNum - 1].product_name.length; k--) {
-                                    spaceTwo += " ";
-                                }
-                                console.log("ITEM ID : " + list[itemNum - 1].item_id + space + " PRODUCT NAME : " + list[itemNum - 1].product_name +
-                                    spaceTwo + " QUANTITIES : " + list[itemNum - 1].stock_quantity);
+                                console.log("ITEM ID : " + itemNum + 
+                                    manager.getSpace(list[itemNum - 1].item_id.toString().length) + 
+                                    " PRODUCT NAME : " + list[itemNum - 1].product_name +
+                                    manager.getSpace(list[itemNum - 1].product_name.length) + 
+                                    " QUANTITIES : " + updateStock);
                                 manager.promptContinue();
                             }
                         );
                     }
                 });
-            });
     },
     newProduct: function () {
         inquirer
