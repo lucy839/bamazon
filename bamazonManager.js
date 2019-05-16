@@ -31,54 +31,48 @@ var manager = {
             ])
             .then(function (res) {
                 var command = res.menu;
-                switch (command) {
-                    case ("View Products for Sale"):
-                        manager.view();
-                        break;
-                    case ("View Low Inventory"):
-                        manager.lowInventory();
+                var query = "SELECT * FROM products"
+                connection.query(query, function (err, list) {
+                    if (err) throw err;
+                    switch (command) {
+                        case ("View Products for Sale"):
+                            manager.view(list);
+                            break;
+                        case ("View Low Inventory"):
+                            manager.lowInventory();
 
-                        break;
-                    case ("Add to Inventory"):
-                        manager.addProduct();
+                            break;
+                        case ("Add to Inventory"):
+                            manager.addProduct();
 
-                        break;
-                    case ("Add New Product"):
+                            break;
+                        case ("Add New Product"):
 
-                        manager.newProduct();
-                        break;
-                }
+                            manager.newProduct();
+                            break;
+                    }
+                });
             });
 
     },
-    view: function () {
-        var query = "SELECT * FROM products"
-        connection.query(query, function (err, list) {
-            if (err) throw err;
-
-            var space = " ";
-            var spaceTwo = " ";
-            var spaceThree = " ";
+    // function that gets space and return it, so that all rows and columns are lined up
+    getSpace: function (length) {
+        var space = " ";
+        for (var i = 18; i >= length; i--) {
+            space += " ";
+        }
+        return space;
+    },
+    view: function (list) {
             for (var i in list) {
-                for (var j = 5; j >= list[i].item_id.toString().length; j--) {
-                    space += " ";
-                }
-                for (var k = 20; k >= list[i].product_name.length; k--) {
-                    spaceTwo += " ";
-                }
-                for (var l = 10; l >= list[i].price.toString().length; l--) {
-                    spaceThree += " ";
-                }
-                console.log("ITEM ID : " + list[i].item_id + space + " PRODUCT NAME : " + list[i].product_name +
-                    spaceTwo + " PRICE : $" + list[i].price +
-                    spaceThree + " QUANTITIES : " + list[i].stock_quantity);
-                space = " ";
-                spaceTwo = " ";
-                spaceThree = " ";
+                console.log("ITEM ID : " + list[i].item_id + 
+                    manager.getSpace(list[i].item_id.toString().length) + " PRODUCT NAME : " + 
+                    list[i].product_name + manager.getSpace(list[i].product_name.length) + " PRICE : $" + 
+                    list[i].price + manager.getSpace(list[i].price.toString().length) + 
+                    " QUANTITIES : " + list[i].stock_quantity);
+
             }
             manager.promptContinue();
-        });
-
     },
     lowInventory: function () {
         console.log("These are low in stock!")
@@ -209,7 +203,7 @@ var manager = {
                             console.log("Item is already in stock. Please use Add to Inventory option to add");
                             manager.promptContinue();
                         } else {
-                           
+
                         }
                     } var query = connection.query(
                         "INSERT INTO products SET ?",
@@ -226,27 +220,27 @@ var manager = {
                         }
                     );
 
-                
-            // ele update the mysql
-            // call view();
-                });
-    });
-     },
 
-promptContinue: function () {
-    inquirer
-        .prompt({
-            name: "again",
-            type: "confirm",
-            message: "Would you like to go back??"
-        })
-        .then(function (answer) {
-            if (answer.again === true) {
-                manager.promptManager();
-            } else {
-                console.log("Come back again soon!");
-                connection.end();
-            }
-        });
-}
+                    // ele update the mysql
+                    // call view();
+                });
+            });
+    },
+
+    promptContinue: function () {
+        inquirer
+            .prompt({
+                name: "again",
+                type: "confirm",
+                message: "Would you like to go back??"
+            })
+            .then(function (answer) {
+                if (answer.again === true) {
+                    manager.promptManager();
+                } else {
+                    console.log("Come back again soon!");
+                    connection.end();
+                }
+            });
+    }
 }
