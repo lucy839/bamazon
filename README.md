@@ -68,7 +68,7 @@
 -   node, objects, npm packages, mySQL
 
 ## Reference
--   please take a look at the link below to see working app.
+-   please take a look at screenshots of app in images foder or the link below to see working app.
     https://drive.google.com/file/d/1WP4XDavzwcM4OyBraXHepQIPQ824_7Nt/view?usp=sharing
 
 
