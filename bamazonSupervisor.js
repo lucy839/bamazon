@@ -36,7 +36,7 @@ var supervisor = {
                         case ("View Product Sales by Department"):
                             // supervisor.view(list);
                             console.log("| Department_Id |Department_Name|Over_Head_Costs" +
-                            "| Product_Sales | total_Profit  |");
+                                "| Product_Sales | total_Profit  |");
                             var line = "";
                             for (var i = 0; i < 5; i++) {
                                 line += "|";
@@ -47,11 +47,12 @@ var supervisor = {
                             line += "|";
                             console.log(line);
                             for (var i in list) {
-                            supervisor.getProductSales(list[i]);
+                                supervisor.getProductSales(list[i]);
                             }
+                            
                             break;
                         case ("Create New Department"):
-                            // supervisor.create();
+                            supervisor.create(list);
                             break;
                     }
                 });
@@ -85,39 +86,100 @@ var supervisor = {
         for (var j = 15; j > profit.toString().length; j--) {
             row += " ";
         }
-  
 
-        console.log(row +"|");
+
+        console.log(row + "|");
 
         row = "";
-     
+ 
+
     },
     getProductSales: function (list) {
         // console.log(list);
-    
-     
+
+
         // for (var i in list) {
-            connection.query(
-                "SELECT * FROM products WHERE ?",
-                {
-                    department_name: list.department_name
-                },
-                function (err, res) {
-                    var productSales = 0;
-                    for (var k in res) {
+        connection.query(
+            "SELECT * FROM products WHERE ?",
+            {
+                department_name: list.department_name
+            },
+            function (err, res) {
+                var productSales = 0;
+                for (var k in res) {
 
-                        // console.log(res[k].product_sales);
-                        if (res[k].product_sales != null) {
-                            productSales += res[k].product_sales;
-                        }
-
+                    // console.log(res[k].product_sales);
+                    if (res[k].product_sales != null) {
+                        productSales += res[k].product_sales;
                     }
-                    // console.log(productSales);
-                    supervisor.view(list, productSales);
 
                 }
+                // console.log(productSales);
+                supervisor.view(list, productSales);
+          
 
-            );
+            }
 
+        );
+
+    },
+    create: function (list) {
+        inquirer
+            .prompt([
+                {
+                    name: "name",
+                    type: "input",
+                    message: "What is the name of department your adding? ",
+                },
+                {
+                    name: "overhead",
+                    type: "input",
+                    message: "What is the over head cost? ",
+                    validate: function (value) {
+                        var valid = !isNaN(parseFloat(value));
+                        return valid || "Please enter a number";
+                    }
+                },
+            ])
+            .then(function (response) {
+                // if it is already on the list, let user know to use other option.
+                // var query = "SELECT * FROM departments"
+                // connection.query(query, function (err, list) {
+                for (var i in list) {
+                    if (response.name == list[i].department_name) {
+                        console.log("deparmtent is already in stock. Please use Add to Inventory option to add");
+                        supervisor.promptContinue();
+                    } else {
+                        //    ****TEST needed
+                    }
+                } var query = connection.query(
+                    "INSERT INTO departments SET ?",
+                    {
+                        department_name: response.name,
+                        over_head_costs: response.overhead,
+                    },
+                    function (err, res) {
+                        console.log("Department Registered");
+                        // Call updateProduct AFTER the INSERT completes
+                        supervisor.promptContinue();
+                    }
+                );
+            });
+    },
+    promptContinue: function () {
+        inquirer
+            .prompt({
+                name: "again",
+                type: "confirm",
+                message: "Would you like to go back??"
+            })
+            .then(function (answer) {
+                if (answer.again === true) {
+                    supervisor.promptSupervisor();
+                } else {
+                    console.log("Come back again soon!");
+                    connection.end();
+                }
+            });
     }
 }

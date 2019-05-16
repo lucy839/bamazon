@@ -1,9 +1,13 @@
+// packages required
 require("dotenv").config();
 var mysql = require("mysql");
 var keys = require("./keys.js");
 var inquirer = require("inquirer");
 
+// for keeping password private
 var myPassword = keys.keys.password;
+
+// mysql connection 
 var connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
@@ -12,40 +16,50 @@ var connection = mysql.createConnection({
     database: "bamazonDB"
 });
 
+// check the connection
 connection.connect(function (err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId);
+    // If no problem, start the app by loading data
     customer.loadData();
 });
 
-
-
 var customer = {
+    // load data from mysql
     loadData: function () {
         var query = "SELECT * FROM products"
         connection.query(query, function (err, list) {
             if (err) throw err;
+            // if no problem, call salesItem function within this object with list passed as parameter
             customer.salesItem(list)
         });
     },
+
+    // function that gets space and return it, so that all rows and columns are lined up
+    getSpace: function (length) {
+        var space = " ";
+        for (var i = 25; i >= length; i--) {
+            space += " ";
+        }
+        return space;
+    },
+
+    //  function that welcome user and list the items in stock
     salesItem: function (list) {
         var space = " ";
         var spaceTwo = " ";
         console.log("Welcome to Bamazon!!!");
         for (var i in list) {
-            for (var j = 5; j >= list[i].item_id.toString().length; j--) {
-                space += " ";
-            }
-            for (var k = 20; k >= list[i].product_name.length; k--) {
-                spaceTwo += " ";
-            }
-            console.log("ITEM ID : " + list[i].item_id + space + " PRODUCT NAME : " + list[i].product_name +
-                spaceTwo + " PRICE : $" + list[i].price);
-            var space = " ";
-            var spaceTwo = " ";
+            console.log("ITEM ID : " + list[i].item_id +
+                customer.getSpace(list[i].item_id.toString().length) + " PRODUCT NAME : " +
+                list[i].product_name + customer.getSpace(list[i].product_name.length) + " PRICE : $" +
+                list[i].price);
         }
+        // call promptUser function to proceed the transaction after list is displayed
         customer.promptUser();
     },
+
+    // function that asks user for item and quantity of their purchase
     promptUser: function () {
         inquirer
             .prompt([
@@ -71,28 +85,30 @@ var customer = {
             .then(function (response) {
                 var itemNum = response.item;
                 var itemQuantity = response.quantity;
-
+                // once response is received, call checkInStock function with responses received
                 customer.checkInStock(itemNum, itemQuantity);
-
             });
     },
+
+    // function that check if enough quantity is instock for the item that user is trying to purchase
     checkInStock: function (itemNum, itemQuantity) {
         var query = "SELECT * FROM products"
         connection.query(query, function (err, res) {
             if (err) throw err;
             var currentStock = res[itemNum - 1].stock_quantity;
-
+            // if enough in stock, proceed to update the inventory
             if (currentStock >= itemQuantity) {
                 customer.update(itemNum, itemQuantity, currentStock);
-            } else {
+            // if not enough in stock, let user know, and call promptContinue function to start over
+            } else {    
                 console.log("Sorry, Not enough in stock!");
                 customer.promptContinue();
             }
-
         });
     },
-    update: function (itemNum, itemQuantity, currentStock) {
 
+    // function that update inventory using user input
+    update: function (itemNum, itemQuantity, currentStock) {
         console.log("processing the order...");
         var updateStock = currentStock - itemQuantity;
         var query = connection.query(
@@ -106,52 +122,59 @@ var customer = {
                 }
             ],
             function (err, res) {
+                if (err) throw err;
+                // once update has been done without any problem, call report functin to finish
+                // transaction
                 customer.report(itemNum, itemQuantity);
             }
         );
-
     },
+
+    // function that gives report(receipt) to user by letting them know total cost
+    // and update product_sales
     report: function (itemNum, itemQuantity) {
         var query = "SELECT * FROM products"
         connection.query(query, function (err, list) {
-            // console.log(res);
             var total = list[itemNum - 1].price * itemQuantity;
-        console.log("You are purchasing " + itemQuantity + " " +
-            list[itemNum - 1].product_name + "...TOTAL COST IS $" + total);
-        var productSales = list[itemNum - 1].product_sales + total;
-        var query = connection.query(
-            "UPDATE products SET ? WHERE ?",
-            [
-                {
-                    product_sales: productSales
-                },
-                {
-                    item_id: itemNum
+            console.log("You are purchasing " + itemQuantity + " " +
+                list[itemNum - 1].product_name + "...TOTAL COST IS $" + total);
+            var productSales = list[itemNum - 1].product_sales + total;
+            var query = connection.query(
+                "UPDATE products SET ? WHERE ?",
+                [
+                    {
+                        product_sales: productSales
+                    },
+                    {
+                        item_id: itemNum
+                    }
+                ],
+                function (err, res) {
+                    if (err) throw err;
+                    // update has been done without anyproblem,
+                    // call promptContinue function to repeat the app
+                    customer.promptContinue();
                 }
-            ],
-            function (err, res) {
-                customer.promptContinue();
-            }
-        );
-    });
-    },
-promptContinue: function () {
-    inquirer
-        .prompt({
-            name: "again",
-            type: "confirm",
-            message: "Would you like to make another purchase?"
-        })
-        .then(function (answer) {
-            if (answer.again === true) {
-                customer.loadData();
-            } else {
-                console.log("Come back again soon!");
-                connection.end();
-            }
+            );
         });
-}
+    },
 
-
+    // function that let user know to decide whether to make another transaction or finish the app
+    promptContinue: function () {
+        inquirer
+            .prompt({
+                name: "again",
+                type: "confirm",
+                message: "Would you like to make another purchase?"
+            })
+            .then(function (answer) {
+                if (answer.again === true) {
+                    customer.loadData();
+                } else {
+                    console.log("Come back again soon!");
+                    connection.end();
+                }
+            });
+    }
 }
 
